@@ -1,0 +1,31 @@
+# LVBench (lmms-eval/LVBench), loaded offline from @LVBENCH_DIR@:
+#   @LVBENCH_DIR@/<key>.mp4 (103 videos), @LVBENCH_DIR@/data/train-*.parquet (1,549 questions).
+# lmms-eval does not expand environment variables in task yamls, so
+# run_lmms.sh writes lvbench.yaml from this template with the real path.
+dataset_path: parquet
+dataset_kwargs:
+  data_files:
+    train: "@LVBENCH_DIR@/data/train-*.parquet"
+task: lvbench
+test_split: train
+output_type: generate_until
+doc_to_visual: !function utils.lvbench_doc_to_visual
+doc_to_text: !function utils.lvbench_doc_to_text
+doc_to_target: "answer"
+generation_kwargs:
+  max_new_tokens: 16
+  temperature: 0
+  top_p: 1.0
+  num_beams: 1
+  do_sample: false
+process_results: !function utils.lvbench_process_results
+metric_list:
+  - metric: lvbench_accuracy
+    aggregation: !function utils.lvbench_aggregate_results
+    higher_is_better: true
+lmms_eval_specific_kwargs:
+  default:
+    pre_prompt: ""
+    post_prompt: "\nAnswer with the option's letter from the given choices directly."
+metadata:
+  - version: 0.0

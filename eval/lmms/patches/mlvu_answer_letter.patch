@@ -1,0 +1,31 @@
+--- a/lmms_eval/tasks/mlvu/utils.py
++++ b/lmms_eval/tasks/mlvu/utils.py
+@@ -70,13 +70,25 @@
+ 
+ 
+ def extract_characters_regex(s):
++    # PATCHED 2026-09-01: the original returned the raw string when no ")" was
++    # present, so answers like "D." never matched the target "D" and the model
++    # scored 0. Models that emit "A) ..." are unaffected (same branch, same result).
+     s = s.strip()
+     if ")" in s:
+         index = s.index(")")
+         pred = s[index - 1 : index]
+-        return pred
+-    else:
+-        return s
++        if re.fullmatch(r"[A-Za-z]", pred):
++            return pred.upper()
++    m = re.match(r"^\(?\s*([A-Za-z])\s*[\.\):,\-]", s)
++    if m:
++        return m.group(1).upper()
++    m = re.match(r"^\(?\s*([A-Za-z])\s*$", s)
++    if m:
++        return m.group(1).upper()
++    m = re.search(r"\b([A-Ha-h])\b", s)
++    if m:
++        return m.group(1).upper()
++    return s
+ 
+ 
+ def mlvu_process_results(doc, results):

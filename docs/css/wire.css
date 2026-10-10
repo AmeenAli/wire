@@ -1,0 +1,210 @@
+/* ============================================================
+   WIRE page components. Loaded after style.css and hero.css (and before
+   theme-classic.css in the classic version). Uses the shared tokens.
+   The cover (css/cover.css) and the method animation (css/overview.css)
+   have their own files.
+   ============================================================ */
+
+/* ?static=1: no transitions or animations, for headless captures */
+html.is-static *, html.is-static *::before, html.is-static *::after { transition: none !important; animation: none !important; }
+
+/* Keep short names such as Video-MME on one line */
+.nw { white-space: nowrap; }
+
+/* An author without a profile link reads like the linked names */
+.author-name { color: var(--text-primary); }
+
+/* ---------------- Gain bars: accuracy points over a named baseline, growing from a zero line ---------------- */
+.gain-bars { display: flex; flex-direction: column; gap: 8px; }
+.gain-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr); gap: 14px; align-items: center; }
+.gain-row.is-family-break { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--neutral-200); }
+.gain-label { font-size: 14px; line-height: 1.3; letter-spacing: -0.01em; color: var(--neutral-800); display: flex; flex-direction: column; gap: 2px; }
+.gain-label small { font-size: 12px; letter-spacing: 0; color: var(--neutral-500); }
+.gain-label small.gain-from { letter-spacing: 0.01em; font-size: 11.5px; color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.gain-track { position: relative; height: 22px; outline: none; }
+.gain-zero { position: absolute; left: 0; top: -4px; bottom: -4px; width: 1px; background: var(--neutral-400); }
+.gain-bar { position: absolute; left: 0; top: 4px; height: 14px; transition: width .55s cubic-bezier(.22,.61,.36,1); }
+.gain-bar.is-gain { background: var(--series-diffusion); border-radius: 0 4px 4px 0; }
+.gain-bar.is-loss { background: var(--series-ar); border-radius: 0 4px 4px 0; }
+.gain-val { position: absolute; top: 2px; padding: 0 6px; font-size: 12.5px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gain-val.is-gain { color: var(--accent-primary); font-weight: 500; }
+.gain-val.is-loss { color: var(--neutral-600); }
+.gain-val.is-inside { color: #fff; }
+.gain-track:hover .gain-bar, .gain-track:focus-visible .gain-bar { filter: brightness(1.08); }
+.gain-axis { margin-top: 2px; }
+.gain-ticks { position: relative; height: 16px; }
+.gain-ticks span { position: absolute; top: 0; transform: translateX(-50%); font-size: 10.5px; color: var(--neutral-400); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.gain-ticks span.is-first { transform: none; }
+.gain-group-title { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--neutral-500); margin: 6px 0 -2px; }
+.gain-group-title:first-child { margin-top: 0; }
+
+/* ---------------- Speedup bars: times faster than the uncompressed backbone (Table 4) ---------------- */
+.times-bars { display: flex; flex-direction: column; gap: 8px; }
+.times-row { display: grid; grid-template-columns: minmax(110px, 190px) minmax(0, 1fr); gap: 14px; align-items: center; }
+.times-label { font-size: 14px; line-height: 1.3; letter-spacing: -0.01em; color: var(--neutral-800); display: flex; flex-direction: column; gap: 2px; }
+.times-label small { font-size: 11.5px; letter-spacing: 0.01em; color: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.times-track { position: relative; height: 22px; outline: none; }
+.times-zero { position: absolute; left: 0; top: -4px; bottom: -4px; width: 1px; background: var(--neutral-400); }
+.times-ref { position: absolute; top: -6px; bottom: -6px; width: 0; border-left: 1px dashed var(--neutral-400); }
+.times-bar { position: absolute; left: 0; top: 4px; height: 14px; border-radius: 0 4px 4px 0; background: var(--series-diffusion); transition: width .55s cubic-bezier(.22,.61,.36,1); }
+.times-val { position: absolute; top: 2px; padding: 0 6px; font-size: 12.5px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--accent-primary); font-weight: 500; }
+.times-val.is-inside { color: #fff; }
+.times-track:hover .times-bar, .times-track:focus-visible .times-bar { filter: brightness(1.08); }
+.times-axis { margin-top: 2px; }
+.times-ticks { position: relative; height: 16px; }
+.times-ticks span { position: absolute; top: 0; transform: translateX(-50%); font-size: 10.5px; color: var(--neutral-400); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.times-ticks span.is-first { transform: none; }
+.times-ticks span.is-ref { color: var(--neutral-600); }
+
+/* ---------------- Accuracy bars on a zero-based axis (Table 2, Section 5.1) ---------------- */
+.acc-bars { display: flex; flex-direction: column; gap: 10px; }
+.acc-row { display: grid; grid-template-columns: minmax(130px, 230px) minmax(0, 1fr); gap: 14px; align-items: center; }
+.acc-label { font-size: 14px; line-height: 1.3; letter-spacing: -0.01em; color: var(--neutral-800); display: flex; flex-direction: column; gap: 2px; }
+.acc-label small { font-size: 12px; color: var(--neutral-500); }
+.acc-row.is-ours .acc-label { color: var(--accent-primary); font-weight: 500; }
+.acc-track { position: relative; height: 22px; outline: none; }
+.acc-bar { position: absolute; left: 0; top: 4px; height: 14px; border-radius: 0 4px 4px 0; background: var(--series-ar); transition: width .55s cubic-bezier(.22,.61,.36,1); }
+.acc-bar.is-light { background: #ABABAB; }
+.acc-bar.is-ours { background: var(--series-diffusion); }
+.acc-val { position: absolute; top: 2px; padding: 0 6px; font-size: 12.5px; line-height: 18px; white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--neutral-700); }
+.acc-val b { font-weight: 500; color: var(--neutral-900); }
+.acc-val em { font-style: normal; color: var(--accent-primary); font-weight: 500; margin-left: 6px; }
+.acc-row.is-ours .acc-val b { color: var(--accent-primary); }
+.acc-ref { position: absolute; top: -5px; bottom: -5px; width: 0; border-left: 1.5px dashed var(--brand-navy); opacity: 0.55; }
+.acc-ticks { position: relative; height: 16px; }
+.acc-ticks span { position: absolute; top: 0; transform: translateX(-50%); font-size: 10.5px; color: var(--neutral-400); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.acc-ticks span.is-first { transform: none; }
+.acc-track:hover .acc-bar, .acc-track:focus-visible .acc-bar { filter: brightness(1.08); }
+
+/* ---------------- Time to first token across systems (Figure 1 redrawn): log-log lines ---------------- */
+.line-plot { position: relative; }
+.line-plot svg { display: block; width: 100%; height: auto; overflow: visible; }
+.line-plot .grid { stroke: #E3E3E3; stroke-width: 1; }
+.line-plot .axis { stroke: var(--neutral-300); stroke-width: 1; }
+.line-plot .tick { font-family: var(--font-body); font-size: 11px; fill: var(--neutral-400); font-variant-numeric: tabular-nums; }
+.line-plot .axis-title { font-family: var(--font-body); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; fill: var(--neutral-500); }
+.line-plot .band { fill: rgba(0, 0, 0, 0.035); }
+.line-plot .band-label { font-family: var(--font-body); font-size: 10.5px; fill: var(--neutral-500); }
+.line-plot .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.line-plot .line.is-ours { stroke: var(--series-diffusion); stroke-width: 2.6; }
+.line-plot .line.is-base { stroke: var(--series-ar); }
+.line-plot .line.is-backbone { stroke: var(--neutral-850); stroke-width: 1.8; }
+.line-plot .dot.is-backbone { fill: var(--neutral-850); }
+.line-plot .lbl.is-backbone { fill: var(--neutral-850); }
+.line-plot .line.is-dash1 { stroke-dasharray: 6 4; }
+.line-plot .line.is-dash2 { stroke-dasharray: 2 3; }
+.line-plot .dot { stroke: var(--surface-panel); stroke-width: 2; outline: none; }
+.line-plot .dot.is-ours { fill: var(--series-diffusion); }
+.line-plot .dot.is-base { fill: var(--series-ar); }
+.line-plot .dot:hover, .line-plot .dot:focus-visible { filter: brightness(1.15); }
+.line-plot .oom { font-family: var(--font-body); font-size: 13px; font-weight: 600; fill: var(--neutral-500); }
+.line-plot .lbl { font-family: var(--font-body); font-size: 12.5px; fill: var(--neutral-700); }
+.line-plot .lbl.is-ours { fill: var(--accent-primary); font-weight: 600; }
+.line-plot .val { font-family: var(--font-body); font-size: 11.5px; fill: var(--neutral-600); font-variant-numeric: tabular-nums; }
+.line-plot .val.is-ours { fill: var(--accent-primary); font-weight: 500; }
+.line-plot svg.is-narrow .tick, .line-plot svg.is-narrow .val { font-size: 13px; }
+.line-plot svg.is-narrow .lbl { font-size: 14px; }
+.line-plot svg.is-narrow .axis-title { font-size: 12px; letter-spacing: 0.04em; }
+.line-plot svg.is-narrow .band-label { font-size: 12px; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 0 0 12px; font-size: 13px; color: var(--neutral-700); }
+.chart-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.chart-legend i { width: 18px; height: 0; border-top: 2.5px solid var(--series-ar); display: inline-block; }
+.chart-legend i.is-ours { border-top-color: var(--series-diffusion); border-top-width: 3px; }
+.chart-legend i.is-backbone { border-top-color: var(--neutral-850); }
+.chart-legend i.is-dash1 { border-top-style: dashed; }
+.chart-legend i.is-dash2 { border-top-style: dotted; }
+.chart-legend .oom-key { font-weight: 600; color: var(--neutral-500); }
+
+@media (max-width: 560px) {
+  /* phones: the label sits above its bar, so both use the full width */
+  .gain-row, .times-row, .acc-row { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .gain-row + .gain-row, .times-row + .times-row, .acc-row + .acc-row { margin-top: 6px; }
+  .gain-label, .times-label, .acc-label { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0 8px; }
+  .gain-axis > div:first-child, .times-axis > div:first-child, .acc-axis > div:first-child { display: none; }
+  .gain-val, .times-val, .acc-val { font-size: 12px; padding: 0 4px; }
+}
+
+/* ---------------- The method in equations (How it works); KaTeX renders at build time ---------------- */
+.eq-steps { display: flex; flex-direction: column; gap: 12px; margin: var(--space-xl) 0 var(--space-2xl); }
+.eq-step { background: var(--surface-panel); border-radius: 20px; padding: 20px 24px 20px; display: grid; grid-template-columns: 190px minmax(0, 1fr); gap: 10px 28px; align-items: start; }
+.eq-step-head { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding-top: 4px; }
+.eq-step-head h4 { font-family: var(--font-body); font-size: 15.5px; font-weight: 500; letter-spacing: -0.02em; line-height: 1.3; color: var(--neutral-900); margin: 0; }
+.eq-sec { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--neutral-400); }
+.eq-step-body { min-width: 0; }
+.math-display { overflow-x: auto; overflow-y: hidden; padding: 2px 6px; margin: 0 -6px; -webkit-overflow-scrolling: touch; } /* padding holds KaTeX glyph overhang, so no stray scrollbar */
+.eq-row { display: flex; flex-wrap: wrap; align-items: center; column-gap: 2.4em; }
+.eq-row > .math-display { flex: 0 1 auto; max-width: 100%; }
+.math-display.eq-narrow { display: none; }
+.math-display .katex-display { margin: 4px 0 8px; text-align: left; }
+.math-display .katex-display > .katex { text-align: left; }
+.math-display .katex { font-size: 1.14em; color: var(--neutral-900); }
+.article-body .eq-note { font-size: 14.5px; line-height: 1.55; color: var(--neutral-600); opacity: 1; margin: 6px 0 0; letter-spacing: -0.01em; }
+.eq-note .katex, .chart-note .katex { font-size: 1.03em; color: var(--neutral-800); }
+@media (max-width: 900px) {
+  .eq-step { grid-template-columns: minmax(0, 1fr); padding: 16px 16px 18px; gap: 6px; }
+  .eq-step-head { flex-direction: row; align-items: center; flex-wrap: wrap; gap: 6px 10px; padding-top: 0; }
+}
+@media (max-width: 560px) {
+  .math-display .katex { font-size: 1em; }
+  .article-body .eq-note { font-size: 15px; }
+  .eq-row { column-gap: 1.6em; }
+  .math-display.eq-wide { display: none; }
+  .math-display.eq-narrow { display: block; }
+}
+@media (max-width: 380px) {
+  /* the narrowest phones: display equations fit the card without sideways scrolling */
+  .math-display .katex { font-size: 0.86em; }
+}
+
+/* ---------------- Figure 3 (a): one Video-MME question at 256 frames ---------------- */
+.example-qa { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 10px 28px; align-items: start; }
+.article-body .example-q { grid-column: 1 / -1; margin: 0; font-size: 16px; line-height: 1.45; font-weight: 500; color: var(--neutral-900); opacity: 1; letter-spacing: -0.01em; }
+.article-body .example-options { margin: 0; padding-left: 1.6em; color: var(--neutral-700); opacity: 1; }
+.article-body .example-options li { font-size: 14.5px; line-height: 1.45; margin-bottom: 4px; letter-spacing: -0.01em; }
+.article-body .example-options li.is-answer { color: var(--neutral-900); font-weight: 500; }
+.article-body .example-answers { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; opacity: 1; }
+.article-body .example-answers li { display: grid; grid-template-columns: minmax(0, 1fr) 28px 84px; align-items: center; gap: 8px; margin: 0; padding: 6px 12px; border-radius: 12px; background: var(--nav-bg); font-size: 14px; line-height: 1.3; letter-spacing: -0.01em; color: var(--neutral-800); }
+.example-answers .ex-ans { font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; }
+.example-answers .ex-tag { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; text-align: right; }
+.example-answers .is-correct .ex-tag { color: #1F7A45; }
+.example-answers .is-wrong .ex-tag { color: #A23434; }
+.example-answers .is-wrong .ex-ans { color: var(--neutral-500); }
+.article-body .example-answers li.is-ours { box-shadow: inset 0 0 0 1px rgba(37, 72, 246, 0.4); color: var(--accent-primary); font-weight: 500; }
+@media (max-width: 760px) {
+  .example-qa { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+/* ---------------- Header: four institution logos, three paper links (style.css sets their columns) ---------------- */
+.logo-btn.is-mark img { height: 44px; }
+@container (max-width: 759px) {
+  .logo-btn.is-mark img { max-height: 40px; }
+}
+
+/* ---------------- Quick links on phones: four links and the share button; the share button takes the last row ---------------- */
+@media (max-width: 640px) {
+  .quick-links-share { grid-column: 1 / -1; justify-content: center; }
+}
+
+/* ---------------- Banner: one box per person ---------------- */
+.people-stack { display: flex; flex-direction: column; gap: 14px; }
+.people-stack .people-card { gap: 16px; }
+/* each box opens the same page as the name in the author list; the name link is stretched over the box,
+   and the links inside the role line stay clickable above it */
+.people-stack .people-card { position: relative; transition: border-color .2s, background-color .2s; }
+.people-card .person-link { color: inherit; text-decoration: none; }
+.people-card .person-link::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
+.people-card .person-link:focus-visible { outline: none; }
+.people-card:has(.person-link:focus-visible) { outline: 2px solid #fff; outline-offset: 3px; }
+.people-card .person-role a { position: relative; z-index: 1; }
+.people-stack .people-card:hover { border-color: rgba(255,255,255,0.42); background-color: rgba(255,254,251,0.13); }
+.acc-val.is-inside, .acc-val.is-inside b, .acc-val.is-inside em, .acc-row.is-ours .acc-val.is-inside b { color: #fff; }
+
+/* ---------------- References: a dataset or model name links to its paper (dotted underline, text colour) ---------------- */
+a.ref[href], .article-body a.ref[href] { color: inherit; border-bottom: 1px dotted currentColor; text-decoration: none; white-space: nowrap; }
+a.ref[href]:hover, a.ref[href]:focus-visible, .article-body a.ref[href]:hover { color: var(--accent-article); border-bottom-style: solid; border-bottom-color: var(--accent-article); }
+.article-body .chart-note:has(+ .chart-papers) { margin-bottom: 0; }
+.article-body .chart-note.chart-papers { margin-top: 6px; }
+
+/* ---------------- Decart banner: the person box sits at the top of its column ---------------- */
+.cta-banner .people-stack { align-self: start; }

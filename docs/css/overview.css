@@ -1,0 +1,161 @@
+/* ---------------- WIRE method animation (How it works, js/overview.js) ----------------
+   Figure 2 of the paper in four scenes. The colours follow the figure and are shared with the cover: blue for the
+   frozen components, amber for the trained parts and their outputs, gray for the full-resolution tokens, lavender
+   for the question. Heatmaps run from blue (negative) through white to amber (positive), with a labelled legend. */
+.wire-anim {
+  --w-frozen: #EAF0FE; --w-frozen-line: #9DB0FB; --w-frozen-text: #00044C;
+  --w-trained: #E8862A; --w-trained-soft: #FCE9D6; --w-trained-text: #3B2A12; --w-on-amber: #FFFFFF;
+  --w-token: #D6D6D6; --w-removed: #E3E3E3;
+  --w-question: #E9E3FB; --w-question-line: #9C86E0;
+  --w-neg: #2548F6; --w-zero: #FFFFFF; --w-pos: #E8862A;
+  position: relative; background: var(--surface-panel); border-radius: 28px; padding: 22px 24px 20px; margin: var(--space-lg) 0 0;
+  container-type: inline-size;
+}
+.wa-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.wa-tabs { flex-wrap: nowrap; min-width: 0; max-width: none; }
+.wa-tabs button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 10.5px; letter-spacing: 0.08em; white-space: nowrap; }
+.wa-num { flex: none; width: 18px; height: 18px; border-radius: 5px; background: var(--neutral-200); color: var(--neutral-800); display: inline-flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 600; letter-spacing: 0; }
+.wa-tabs button[aria-selected="true"] .wa-num { background: #fff; color: var(--accent-primary); }
+.wire-anim .wa-tabs .lbl-long { display: inline; }
+.wire-anim .wa-tabs .lbl-short { display: none; }
+/* The tabs follow the card's width (container query on .wire-anim, whose content box it reads). Measured in place
+   with the play button, the long labels forced onto one line inside the real bar: the long labels need a content
+   box of 768px (Decart) and 796px (classic); the short labels 483px and 495px (452px and 464px with the phone
+   styles); only the selected tab labelled, with 36px number tabs, 272px and 277px. Each switch sits about 9px above
+   the larger need. */
+@container (max-width: 805px) {
+  .wire-anim .wa-tabs .lbl-long { display: none; }
+  .wire-anim .wa-tabs .lbl-short { display: inline; }
+}
+@container (max-width: 504px) {
+  .wire-anim .wa-tabs button:not([aria-selected="true"]) .lbl-short { display: none; }
+  .wa-tabs button { min-width: 36px; }
+}
+@container (max-width: 285px) {
+  .wire-anim .wa-tabs .lbl-short { display: none; }
+}
+.wa-play { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: 0; background: var(--neutral-900); color: #fff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.wa-play:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.wa-play svg { width: 18px; height: 18px; fill: currentColor; display: none; }
+.wa-play .i-replay { fill: none; }
+.wa-play[data-mode="play"] .i-play, .wa-play[data-mode="pause"] .i-pause, .wa-play[data-mode="replay"] .i-replay { display: block; }
+.wire-anim.is-static .wa-play, .wire-anim.is-static .wa-progress { display: none; }
+.wa-stage { background: var(--nav-bg); border-radius: 20px; padding: 12px 10px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05); }
+.wa-svg { display: block; width: 100%; height: auto; margin: 0 auto; }
+.wire-anim.is-narrow .wa-svg { max-width: 440px; }
+.wa-svg [hidden] { display: none !important; }
+.wa-progress { height: 3px; background: var(--neutral-200); border-radius: 2px; margin: 14px 0 12px; overflow: hidden; }
+.wa-progress i { display: block; height: 100%; width: 0; background: var(--accent-primary); }
+.wire-anim.is-static .wa-caption { margin-top: 14px; }
+/* the caption keeps the height of the longest of the four captions (set by the script), so the card does not jump */
+.article-body .wa-caption { font-size: 15.5px; line-height: 1.5; letter-spacing: -0.01em; color: var(--neutral-700); margin: 0; opacity: 1; }
+.wa-caption strong { color: var(--neutral-900); font-weight: 500; }
+.wire-anim + .anim-note { margin-top: 12px; }
+
+/* SVG text: the body face for words, the KaTeX faces of the equation cards for symbols */
+.wa-svg text { font-family: var(--font-body); }
+.wa-t { font-size: calc(13px * var(--wa-f, 1)); fill: var(--neutral-700); }
+.wa-small { font-size: calc(11.5px * var(--wa-f, 1)); fill: var(--neutral-500); }
+.wa-hd { font-size: calc(13.5px * var(--wa-f, 1)); font-weight: 500; fill: var(--neutral-900); }
+.wa-strong { font-weight: 500; fill: var(--neutral-800); }
+.wa-lab { fill: var(--neutral-800); }
+.wa-bt { fill: var(--neutral-800); }
+.wa-frozen .wa-bt { fill: var(--w-frozen-text); }
+.wa-trained .wa-bt { fill: var(--w-trained-text); }
+.wa-tag, .wa-tagf, .wa-tagt { letter-spacing: 0.02em; font-weight: 400; }
+.wa-frozen .wa-tag, .wa-tagf { fill: #3D4C8F; }
+.wa-trained .wa-tag, .wa-tagt { fill: #8A4F12; }
+.wa-sym { font-size: calc(15px * var(--wa-f, 1)); fill: var(--neutral-800); }
+.wa-mi { font-family: KaTeX_Math, 'Times New Roman', serif; font-style: italic; font-size: 1.1em; }
+.wa-mn { font-family: KaTeX_Main, 'Times New Roman', serif; font-style: normal; font-size: 1.1em; }
+.wa-sub { font-size: 0.78em; }
+/* subscripts inside 13px labels (scene 4 tiles) stay at 11px and more */
+.wa-lab .wa-sub { font-size: 0.9em; }
+.wa-op { font-size: calc(18px * var(--wa-f, 1)); fill: var(--neutral-600); }
+.wa-pos, .wa-num, .wa-val { font-variant-numeric: tabular-nums; }
+.wa-pos { fill: var(--neutral-600); }
+.wa-num { fill: var(--neutral-600); }
+.wa-val { fill: var(--neutral-800); }
+.wa-cnt { fill: var(--brand-navy); }
+.wa-note { fill: var(--neutral-600); }
+.wa-qlab { fill: #6B55B8; }
+.wa-dir { fill: var(--neutral-600); }
+.wa-pool { transition: fill .15s; }
+.wa-pool.is-on { fill: var(--neutral-900); }
+.wa-halo { paint-order: stroke; stroke: var(--nav-bg); stroke-width: 4px; stroke-linejoin: round; }
+
+/* components: blue for the frozen backbone parts, amber for the trained compressor and hypernetworks */
+.wa-box rect { stroke-width: 1.2; transition: fill .15s, stroke .15s, stroke-width .15s; }
+.wa-frozen rect { fill: var(--w-frozen); stroke: var(--w-frozen-line); }
+.wa-frozen.is-on rect { stroke: var(--w-frozen-text); stroke-width: 1.8; }
+.wa-trained rect { fill: var(--w-trained-soft); stroke: var(--w-trained); }
+.wa-trained.is-on rect { fill: #F9DCC0; stroke-width: 2.2; }
+.wa-scanbox rect { fill: var(--w-trained-soft); fill-opacity: 0.55; }
+.wa-scanbox.is-on rect { fill: var(--w-trained-soft); fill-opacity: 0.85; stroke-width: 1.8; }
+.wa-arr { fill: none; stroke: var(--neutral-400); stroke-width: 1.3; }
+.wa-arr.is-on { stroke: var(--neutral-800); stroke-width: 1.8; }
+.wa-conn { stroke-dasharray: 3 3; }
+.wa-head-off { fill: var(--neutral-400); }
+.wa-head-on { fill: var(--neutral-800); }
+
+/* frames, token grids and the scan row */
+.wa-frameline { fill: none; stroke: rgba(0,0,0,0.14); }
+.wa-gridlines line { stroke: #fff; stroke-opacity: 0.85; stroke-width: 0.9; }
+.wa-gridbg { fill: var(--nav-bg); stroke: var(--neutral-200); }
+.wa-cell { stroke: rgba(0,0,0,0.10); stroke-width: 0.6; }
+.wa-mini { stroke: none; }
+.wa-qry { stroke: var(--neutral-600); stroke-width: 1.2; }
+.wa-qry.is-half { stroke: var(--w-trained); stroke-width: 1.3; }
+.wa-qry.is-ref { stroke: var(--w-trained); stroke-width: 2.2; }
+.wa-qcell { fill: var(--w-question); stroke: var(--w-question-line); stroke-width: 1; }
+.wa-dot { fill: #fff; stroke: var(--neutral-900); stroke-width: 1.1; }
+.wa-cursor { fill: none; stroke: var(--neutral-900); stroke-width: 1.6; }
+
+/* the decoder input: strip, zoom, separators */
+.wa-stripbg { fill: #fff; stroke: var(--neutral-300); stroke-width: 1; }
+.wa-stxt { fill: #fff; stroke: var(--neutral-400); stroke-width: 0.6; }
+.wa-sq { fill: var(--w-question); stroke: var(--w-question-line); stroke-width: 0.5; }
+.wa-sv { stroke: none; }
+.wa-ans { fill: var(--brand-navy); }
+.wa-zoom { fill: var(--neutral-150); fill-opacity: 0.8; stroke: var(--neutral-300); stroke-width: 0.8; }
+.wa-ztxt { fill: #fff; stroke: var(--neutral-400); stroke-width: 0.9; }
+.wa-zv { stroke-width: 1.3; }
+.wa-sep { stroke: var(--neutral-500); stroke-width: 1; }
+.wa-div { stroke: var(--neutral-500); stroke-width: 1.2; stroke-dasharray: 2 2; }
+
+/* the decoder stack and the hypernetwork */
+.wa-layer { fill: var(--w-frozen); stroke: var(--w-frozen-line); stroke-width: 0.8; }
+.wa-layer.is-cur { stroke: var(--w-frozen-text); stroke-width: 1.4; }
+.wa-layer.is-on { fill: #C9D6FD; stroke: var(--w-frozen-text); stroke-width: 1.4; }
+.wa-mark { fill: #fff; stroke: var(--w-trained); stroke-width: 1.4; }
+.wa-mark.is-done { fill: var(--w-trained); }
+.wa-matbg { fill: none; stroke: var(--neutral-300); stroke-width: 0.8; }
+.wa-hc { stroke: rgba(0,0,0,0.08); stroke-width: 0.5; }
+.wa-mapchip rect { fill: #fff; stroke: var(--neutral-300); stroke-width: 1; }
+.wa-mapchip .wa-map { fill: var(--neutral-600); }
+.wa-mapchip.is-done rect { stroke: var(--w-trained); }
+.wa-mapchip.is-cur rect { fill: var(--w-trained); stroke: var(--w-trained); }
+.wa-mapchip.is-cur .wa-map { fill: var(--w-on-amber); font-weight: 600; }
+.wa-legbar { stroke: var(--neutral-300); stroke-width: 0.6; }
+
+/* merge and decoding */
+.wa-tilef { stroke-width: 1.2; }
+.wa-tile-frozen { fill: var(--w-frozen); stroke: var(--w-frozen-line); }
+.wa-tile-trained { fill: var(--w-trained-soft); stroke: var(--w-trained); transition: fill .2s; }
+.wa-tile-trained.is-empty { fill: none; stroke-dasharray: 4 3; }
+.wa-btrack { fill: var(--neutral-150); }
+.wa-bar-wire { fill: var(--brand-navy); }
+.wa-bar-base { fill: var(--neutral-400); }
+
+/* still frames and reduced motion: no transitions */
+html.is-static .wire-anim *, html.is-static .wire-anim *::before, html.is-static .wire-anim *::after { transition: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .wire-anim *, .wire-anim *::before, .wire-anim *::after { transition: none !important; }
+}
+@media (max-width: 700px) {
+  .wire-anim { padding: 16px 12px 16px; border-radius: 22px; }
+  .wa-stage { padding: 10px 6px; border-radius: 16px; }
+  .wa-tabs button { padding: 7px 8px; gap: 5px; letter-spacing: 0.06em; }
+  .wa-num { width: 17px; height: 17px; }
+  .article-body .wa-caption { font-size: 15px; }
+}

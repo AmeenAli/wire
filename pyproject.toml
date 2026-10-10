@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wire"
+version = "0.1.0"
+description = "WIRE: Weight Space Implicit Representation Encoding of Frozen Video LLMs"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+# transformers and qwen-vl-utils change frame sampling and resizing between
+# releases, so they stay pinned to the versions behind the paper's numbers.
+dependencies = [
+    "torch>=2.6",
+    "transformers==5.7.0",
+    "accelerate",
+    "safetensors",
+    "huggingface_hub",
+    "qwen-vl-utils==0.0.14",
+    "decord",
+    "av",
+    "einops",
+    "pandas",
+    "pyarrow",
+]
+
+[project.optional-dependencies]
+# Mamba2 kernels of the selective scan compressor, built against the installed
+# torch: pip install --no-build-isolation -e ".[scan]"
+scan = ["mamba-ssm>=2.2", "causal-conv1d>=1.4"]
+# The exact environment of the paper's runs (Python 3.10, CUDA 13.0, NVIDIA
+# B200): pip install torch==2.13.0 torchvision==0.28.0, then
+# pip install --no-build-isolation -e ".[paper]"
+paper = [
+    "torch==2.13.0",
+    "torchvision==0.28.0",
+    "transformers==5.7.0",
+    "accelerate==1.14.0",
+    "safetensors==0.8.0",
+    "huggingface_hub==1.24.0",
+    "qwen-vl-utils==0.0.14",
+    "decord==0.6.0",
+    "av==17.1.0",
+    "einops==0.8.2",
+    "pandas==2.3.3",
+    "numpy==2.2.6",
+    "pyarrow",
+    "mamba-ssm==2.3.2.post1",
+    "causal-conv1d==1.6.2.post1",
+]
+test = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["wire*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

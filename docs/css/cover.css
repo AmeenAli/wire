@@ -1,0 +1,229 @@
+/* ============================================================
+   The cover: one video at 256 frames, read by WIRE or by the uncompressed backbone
+   (js/cover.js builds it inside #wireCover). Reuses the sim-card chrome of style.css and
+   hero.css (.sim-top, .seg, .sim-canvas, .sim-controls, .sim-play, the slider and
+   .sim-caption); its own classes start with wc-. Sizes follow the card's width through a
+   container query, so the brand version (a 560px column beside the title), the classic
+   version (a 720px card below it) and the stacked tablet and phone layouts each get the
+   layout that fits. Loaded before theme-classic.css. Text stays at 11px or larger.
+   ============================================================ */
+
+/* The visual vocabulary shared with the method animation (Figure 2 of the paper):
+   frozen components in blue, the trained parts and their outputs in amber. */
+.wire-cover {
+  --w-frozen: #EAF0FE;         /* fill of frozen components */
+  --w-frozen-line: #9DB0FB;    /* their outline */
+  --w-frozen-text: #00044C;    /* text on them */
+  --w-trained: #E8862A;        /* trained parts and their outputs: refined tokens, the weight updates */
+  --w-trained-soft: #FCE9D6;
+  --w-trained-text: #3B2A12;   /* text on amber */
+  --w-on-trained: #FFFFFF;
+  --w-token: #D6D6D6;          /* full-resolution visual tokens */
+  --w-removed: #E3E3E3;        /* removed tokens fade to this outline */
+  --w-question: #E9E3FB;
+  --w-question-line: #9C86E0;
+}
+
+#wireCover { container: wcover / inline-size; text-align: left; }
+.wire-cover {
+  --wc-fg: 6px;      /* between frames */
+  --wc-cg: 1.5px;    /* between token cells */
+  --wc-lg: 3px;      /* between decoder layers */
+  --wc-lh: 34px;     /* the height of a decoder layer */
+  --wc-thumb: 24px;  /* the slider thumb, for the slider fill */
+}
+.wire-cover [hidden] { display: none !important; }
+
+/* ---------- top row: mode toggle and state pill ---------- */
+.wire-cover .wc-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 12px; margin-bottom: 12px; }
+.wire-cover .seg { flex: none; flex-wrap: nowrap; }
+.wire-cover .seg button { font-size: 11px; letter-spacing: 0.12em; white-space: nowrap; }
+/* every label of both modes sits in one grid cell (the copies are invisible), so the row keeps one size */
+.wc-state { display: grid; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.wc-state > .wc-pill { grid-area: 1 / 1; justify-self: end; align-self: center; }
+.wc-pill-sizer { visibility: hidden; }
+.wc-pill {
+  display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 6px 11px 6px 9px; border-radius: 14px;
+  background: var(--neutral-800); color: #fff; font-family: var(--font-body); font-size: 12px; font-weight: 500;
+  line-height: 1.3; letter-spacing: 0.01em;
+}
+.wc-pill i { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 50%; background: #fff; }
+
+/* ---------- panel 1 ---------- */
+.wire-cover .wc-canvas { padding: 12px 14px 13px; margin-bottom: 10px; }
+
+/* question and answer lines */
+.wc-io { display: flex; align-items: baseline; gap: 10px; }
+.wc-tag {
+  flex: none; display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 5px;
+  font-family: var(--font-body); font-size: 11px; font-weight: 500; line-height: 1.25; letter-spacing: 0.12em; text-transform: uppercase;
+}
+.wc-q .wc-tag { background: var(--w-question); box-shadow: inset 0 0 0 1px var(--w-question-line); color: var(--neutral-800); }
+.wc-a .wc-tag { background: var(--w-frozen); box-shadow: inset 0 0 0 1px var(--w-frozen-line); color: var(--w-frozen-text); }
+.wc-text { min-width: 0; margin: 0; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.45; color: #141414; }
+.wc-atext { display: grid; flex: 1 1 auto; border-radius: 4px; }
+.wc-atext > span { grid-area: 1 / 1; }
+.wc-asizer { visibility: hidden; }
+.wc-atext.is-empty { outline: 1px dashed var(--neutral-300); outline-offset: 2px; }
+/* the question and the answer, drawn as token cells (the answer cells appear one per decoding step) */
+.wc-io { align-items: center; }
+.wc-toks { display: flex; flex: 1 1 auto; flex-wrap: wrap; align-items: center; gap: 4px; min-height: 20px; padding: 3px 0; }
+.wc-tok { display: block; flex: none; width: 14px; height: 14px; border-radius: 3px; }
+.wc-qtok { background: var(--w-question); box-shadow: inset 0 0 0 1px var(--w-question-line); }
+.wc-atok { background: var(--w-frozen); box-shadow: inset 0 0 0 1px var(--w-frozen-line); opacity: 0; transform: scale(0.6); transition: opacity .25s ease, transform .25s ease; }
+.wc-atok.is-on { opacity: 1; transform: none; }
+.wc-atext.wc-toks { padding: 3px 4px; }
+
+/* frames, each above its run of 56 tokens as a 7 x 8 grid */
+.wc-strip { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 10px var(--wc-fg); margin: 12px 0 14px; }
+.wc-frame { margin: 0; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.wc-frame img { display: block; width: 100%; height: auto; aspect-ratio: 144 / 81; object-fit: cover; border-radius: 3px; background: var(--neutral-200); }
+.wc-grid { display: flex; flex-direction: column; gap: var(--wc-cg); }
+.wc-row { display: flex; justify-content: center; gap: var(--wc-cg); }
+/* a cell keeps its width when the others collapse, so a run narrows to its survivors and their order */
+.wc-cell {
+  display: block; flex: 0 0 auto; width: calc((100% - 7 * var(--wc-cg)) / 8); aspect-ratio: 1; border-radius: 1px;
+  background: var(--w-token); opacity: 0;
+  transition: opacity .3s ease calc(var(--f, 0) * 45ms), background-color .4s ease, width .55s cubic-bezier(.4, 0, .2, 1), box-shadow .4s ease;
+}
+.wc-strip.is-tokens .wc-cell { opacity: 1; }
+/* compress: the 16 refined tokens of each frame, drawn at the 16 positions they will occupy */
+.wc-strip.is-refined .wc-cell.is-keep {
+  background: var(--w-trained);
+  transition-delay: 0s, calc(var(--f, 0) * 30ms + var(--k, 0) * 14ms), 0s, 0s;
+}
+/* contraction: the 40 removed cells fade to an outline and shrink to ticks that mark the skipped positions */
+.wc-strip.is-contracted .wc-cell:not(.is-keep) { width: 2px; aspect-ratio: auto; background: transparent; box-shadow: inset 0 0 0 1px var(--w-removed); }
+
+/* decoder: 36 frozen layers, the prefill sweep, and the weight-update chips of the adapted layers */
+.wc-dec-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.wire-cover .eyebrow { font-size: 11px; letter-spacing: 0.16em; line-height: 1.2; justify-content: flex-start; }
+/* --wc-inset keeps the chip of layer 35, which is wider than its layer, clear of the canvas edge on phones */
+.wc-stack { position: relative; padding-top: 26px; }
+.wc-chips { position: absolute; z-index: 2; left: 0; right: var(--wc-inset, 0px); top: 0; height: 20px; }   /* above the layers, so a chip folds over its layer */
+.wc-layers { display: flex; gap: var(--wc-lg); height: var(--wc-lh); margin-right: var(--wc-inset, 0px); }
+.wc-layer {
+  position: relative; display: block; flex: 1 1 0; min-width: 0; overflow: hidden; border-radius: 2px;
+  background: var(--w-frozen); box-shadow: inset 0 0 0 1px var(--w-frozen-line);
+  transition: background-color .3s ease, box-shadow .3s ease;
+}
+.wc-layer.is-done { background: var(--w-frozen-line); }
+.wc-layer.is-head { background: var(--w-frozen-text); box-shadow: inset 0 0 0 1px var(--w-frozen-text); }
+.wc-layer::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 0; background: var(--w-trained); transition: height .35s ease .4s; }
+.wc-layer.is-merged::after { height: 42%; }
+/* the centre of layer l, with 36 layers and gaps of --wc-lg */
+.wc-chip, .wc-num { position: absolute; top: 0; left: calc((var(--l) + 0.5) * (100% + var(--wc-lg)) / 36 - var(--wc-lg) / 2); transform: translateX(-50%); }
+/* a chip is 26px wide, or narrower when four layers take less room, so the nine chips never touch */
+.wc-chip {
+  display: inline-flex; align-items: center; justify-content: center; height: 20px; width: min(26px, calc((100% + var(--wc-lg)) / 9 - 4px)); padding: 0; border-radius: 5px;
+  font-family: var(--font-body); font-size: 11px; font-weight: 600; line-height: 1; letter-spacing: 0.02em; white-space: nowrap;
+  color: transparent; background: transparent; outline: 1px dashed var(--w-trained); outline-offset: -1px; opacity: 0.8;
+  transition: background-color .3s ease, color .3s ease, outline-color .3s ease, opacity .45s ease, transform .5s cubic-bezier(.4, 0, .2, 1);
+}
+.wc-chip.is-on { background: var(--w-trained); color: var(--w-trained-text); outline-color: transparent; opacity: 1; }
+/* merge: each chip slides onto the amber share of its layer (the lower 42%), shrinks and fades as that share appears */
+.wc-dec.is-merged .wc-chip {
+  transform: translate(-50%, calc(16px + var(--wc-lh) * 0.79)) scale(0.4); opacity: 0;
+  transition: background-color .3s ease, color .3s ease, outline-color .3s ease, transform .5s cubic-bezier(.4, 0, .2, 1), opacity .2s ease .4s;
+}
+.wire-cover[data-mode="base"] .wc-chip { visibility: hidden; }
+.wc-nums { position: relative; height: 16px; margin-top: 5px; margin-right: var(--wc-inset, 0px); }
+.wc-num { font-size: 11px; line-height: 16px; color: var(--neutral-500); font-variant-numeric: tabular-nums; white-space: nowrap; transition: color .25s ease; }
+.wc-num.is-now { color: var(--neutral-900); font-weight: 600; }
+.wc-dec + .wc-a { margin-top: 12px; }
+
+/* ---------- panel 2: the measurements ---------- */
+.wire-cover .wc-meters { padding: 9px 14px 10px; margin-bottom: 12px; }
+.wc-mtable { display: grid; grid-template-columns: max-content max-content minmax(40px, 1fr) max-content; column-gap: 12px; }
+.wc-mrow { position: relative; display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; align-items: center; padding: 3px 0; }
+.wc-mrow > * { position: relative; }
+/* the row of the current step is tinted */
+.wc-mrow::before { content: ''; position: absolute; top: 0; bottom: 0; left: -7px; right: -7px; border-radius: 6px; background: transparent; transition: background-color .25s ease; }
+.wc-mrow.is-active::before { background: var(--surface-panel); }
+.wc-mlabel { font-size: 12px; line-height: 1.3; color: var(--neutral-600); white-space: nowrap; }
+.wc-mval { font-size: 12.5px; font-weight: 600; line-height: 1.3; color: var(--neutral-900); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wc-moth { font-size: 12px; line-height: 1.3; color: var(--neutral-500); text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wc-mbar { position: relative; display: block; height: 11px; }
+.wc-mbar i { position: absolute; left: 0; display: block; }
+.wc-mbar-cur { top: 0; height: 6px; width: 0; border-radius: 0 3px 3px 0; background: var(--neutral-800); transition: width .45s ease; }
+.wc-mbar-oth { bottom: 0; height: 3px; border-radius: 0 2px 2px 0; background: var(--neutral-300); }
+.wc-mlabel .lbl-short { display: none; }
+.wc-mhead { padding: 0 0 3px; }
+.wc-mkey { display: inline-flex; align-items: center; justify-content: flex-end; gap: 6px; font-size: 11px; font-weight: 500; line-height: 1.3; letter-spacing: 0.02em; color: var(--neutral-600); }
+.wc-mkey::before { content: ''; flex: none; width: 12px; height: 6px; border-radius: 0 3px 3px 0; background: var(--neutral-800); }
+.wc-mkey-oth::before { height: 3px; border-radius: 0 2px 2px 0; background: var(--neutral-300); }
+
+/* ---------- controls and captions ---------- */
+.wire-cover .sim-controls { padding: 0 2px; }
+.wc-captions { display: grid; }
+.wc-captions > .sim-caption { grid-area: 1 / 1; visibility: hidden; }
+.wc-captions > .sim-caption.is-on { visibility: visible; }
+
+/* ?static=1, the first render and reduced motion: no transitions inside the card */
+.wire-cover.wc-init *, .wire-cover.wc-init *::before, .wire-cover.wc-init *::after,
+.is-static .wire-cover *, .is-static .wire-cover *::before, .is-static .wire-cover *::after { transition: none !important; animation: none !important; }
+@media (prefers-reduced-motion: reduce) {
+  .wire-cover *, .wire-cover *::before, .wire-cover *::after { transition: none !important; animation: none !important; }
+}
+
+/* ---------- card chrome by viewport (container queries style descendants only) ---------- */
+@media (min-width: 901px) {
+  .wire-cover.sim-card { padding: 20px; }
+}
+@media (max-width: 900px) {
+  .wire-cover { --wc-thumb: 28px; }
+}
+
+/* ---------- a wide card: the classic version and the stacked tablet layouts ---------- */
+@container wcover (min-width: 600px) {
+  .wc-canvas, .wc-meters { --wc-fg: 8px; --wc-cg: 2px; --wc-lg: 4px; }
+  .wc-strip { margin: 14px 0 16px; }
+  .wc-canvas { --wc-lh: 38px; }
+  .wc-mtable { column-gap: 16px; }
+}
+
+/* ---------- phones: the toggle spans the card, frames in two rows of four, meters on two lines ---------- */
+@container wcover (max-width: 439px) {
+  .wc-canvas, .wc-meters { --wc-fg: 8px; --wc-cg: 1.5px; --wc-lg: 1.5px; --wc-inset: 4px; }
+  .wire-cover .wc-top { flex-direction: column; align-items: stretch; gap: 10px; }
+  .wire-cover .seg { display: flex; width: 100%; }
+  .wire-cover .seg button[role="tab"] { flex: 1 1 0; min-width: 0; display: inline-flex; align-items: center; justify-content: center; white-space: nowrap; letter-spacing: 0.08em; padding: 6px 8px; }
+  .wc-state > .wc-pill { justify-self: start; }
+  .wc-pill { border-radius: 12px; align-items: flex-start; }
+  .wc-pill i { margin-top: 4px; }
+  .wire-cover .wc-canvas { padding: 10px 10px 11px; }
+  .wc-text { font-size: 13px; line-height: 1.5; }
+  .wc-io { gap: 8px; }
+  .wc-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px var(--wc-fg); margin: 10px 0 12px; }
+  .wc-canvas { --wc-lh: 30px; }
+  .wire-cover .wc-meters { padding: 8px 10px 9px; }
+  .wc-mtable { grid-template-columns: minmax(0, 1fr) max-content max-content; column-gap: 12px; }
+  .wc-mrow { row-gap: 4px; padding: 4px 0 5px; }
+  .wc-mlabel { grid-column: 1; grid-row: 1; }
+  .wc-mval { grid-column: 2; grid-row: 1; }
+  .wc-moth { grid-column: 3; grid-row: 1; }
+  .wc-mbar { grid-column: 1 / -1; grid-row: 2; height: 10px; }
+  /* the key becomes one line above the two value columns, so the columns keep the width of their numbers */
+  .wc-mhead { display: flex; justify-content: flex-end; gap: 14px; padding: 0 0 2px; }
+  .wc-mhead .wc-mlabel, .wc-mhead .wc-mbar { display: none; }
+  .wc-mrow::before { left: -5px; right: -5px; }
+}
+/* the narrowest phones: short meter labels, tighter token grids and a narrower canvas padding */
+@container wcover (max-width: 279px) {
+  .wc-canvas, .wc-meters { --wc-cg: 1px; --wc-fg: 6px; --wc-lg: 1px; }
+  .wire-cover .wc-canvas { padding: 10px 8px 11px; }
+  .wc-chip { letter-spacing: 0; }
+  .wc-mlabel .lbl-long { display: none; }
+  .wc-mlabel .lbl-short { display: inline; }
+}
+
+/* ---------- reserved height: the card keeps its built height while the script loads ----------
+   Each value sits just under the smallest built height of its range in both versions (measured at 5px steps;
+   the built height is the same in every step of both modes). The classic version shows a 720px card below the
+   title from 901px; make_classic.py gives its .article-shell the id "top". */
+#wireCover { min-height: 678px; }
+.article-shell#top #wireCover { min-height: 703px; }
+@media (max-width: 1060px) { #wireCover, .article-shell#top #wireCover { min-height: 689px; } }
+@media (max-width: 900px)  { #wireCover, .article-shell#top #wireCover { min-height: 714px; } }
+@media (max-width: 767px)  { #wireCover, .article-shell#top #wireCover { min-height: 690px; } }
+@media (max-width: 519px)  { #wireCover, .article-shell#top #wireCover { min-height: 998px; } }

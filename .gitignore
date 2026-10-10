@@ -1,0 +1,16 @@
+.DS_Store
+__pycache__/
+*.pyc
+*.egg-info/
+.ipynb_checkpoints/
+.pytest_cache/
+.configured.json
+/data/
+/results/
+/checkpoints/
+/release/
+/wandb/
+eval/lmms/tasks/lvbench/lvbench.yaml
+/lmms-eval/
+colab/sample_clip.webm
+colab/my_video.*
